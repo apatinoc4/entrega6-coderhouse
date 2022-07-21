@@ -1,0 +1,53 @@
+<h2>Crear Producto</h2>
+<form onsubmit="return addProduct(this)" id="create-product">
+  Nombre:
+  <input type="text" id="title" name="title" />
+  Precio:
+  <input type="number" id="price" name="price" />
+  Imagen:
+  <input type="text" id="thumbnail" name="thumbnail" />
+  <button>Crear</button>
+</form>
+<input
+  type="button"
+  onclick="location.href='/productos';"
+  value="Lista Productos"
+/>
+
+<h3>Lista de productos:</h3>
+<table id="ptable-head">
+  <thead>
+    <tr>
+      <th scope="col">Nombre</th>
+      <th scope="col">Precio</th>
+      <th scope="col">Imagen</th>
+    </tr>
+  </thead>
+  <tbody id="ptable-products">
+  </tbody>
+</table>
+
+<h3>Chat:</h3>
+<form id="chat-form" onsubmit="return addMessage(this)">
+  <div>
+    <input
+      type="text"
+      id="email"
+      placeholder="andy@gmail.com"
+      style="width:50%"
+      required
+    />
+    <hr />
+    <div id="messages"></div>
+    <p></p>
+    <input
+      type="text"
+      class="form-control"
+      id="text"
+      placeholder="Escribe algo..."
+      style="width:30%"
+    />
+    <p></p>
+    <button type="submit">Enviar</button>
+  </div>
+</form>
