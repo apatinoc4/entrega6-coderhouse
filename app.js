@@ -1,12 +1,25 @@
 const express = require("express");
 const handlebars = require("express-handlebars");
-const classContenedor = require("./classContenedor");
+
+const classContenedor = require("./contenedores/classContenedor");
+const ClassContenedorDB = require("./contenedores/classContenedorDB");
+const { configMySQL, configSQLite } = require("./options/config");
+
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
 const fs = require("fs");
 
 const file1 = new classContenedor("./productos.txt");
+
+const productsApi = new ClassContenedorDB(
+  configMySQL.config,
+  configMySQL.table
+);
+const messagesApi = new ClassContenedorDB(
+  configSQLite.config,
+  configSQLite.table
+);
 
 app.use(express.static("public"));
 
@@ -26,24 +39,23 @@ app.set("views", "./views");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const messages = [];
-
 io.on("connection", async (socket) => {
   console.log("Se ha conectado un nuevo usuario");
+  const messages = await messagesApi.getAll();
 
   socket.emit("messages", messages);
-  socket.on("new-message", function (data) {
+  socket.on("new-message", async function (data) {
     messages.push(data);
     io.sockets.emit("messages", messages);
-    fs.writeFileSync("messages.txt", JSON.stringify(messages));
+    await messagesApi.save(messages);
   });
 
-  const productArray = await file1.getAll();
+  const productArray = await productsApi.getAll();
 
   socket.emit("products", productArray);
   socket.on("new-product", async function (newProduct) {
-    await file1.save(newProduct);
-    const updatedproductArray = await file1.getAll();
+    await productsApi.save(newProduct);
+    const updatedproductArray = await productsApi.getAll();
     io.sockets.emit("products", updatedproductArray);
   });
 });
@@ -55,7 +67,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/productos", async (req, res) => {
-  const arrayProductos = await file1.getAll();
+  const arrayProductos = await productsApi.getAll();
 
   if (arrayProductos && arrayProductos.length > 0) {
     res.render("productList", {
