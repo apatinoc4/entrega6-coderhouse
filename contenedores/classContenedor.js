@@ -1,6 +1,6 @@
-const fs = require("fs");
+import fs from "fs";
 
-module.exports = class Contenedor {
+export default class Contenedor {
   constructor(nombre) {
     this.nombre = nombre;
   }
@@ -146,4 +146,4 @@ module.exports = class Contenedor {
       console.log(err);
     }
   }
-};
+}

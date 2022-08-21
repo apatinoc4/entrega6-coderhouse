@@ -1,5 +1,6 @@
 {
   "name": "entrega6",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -18,6 +19,11 @@
     "mysql": "^2.18.1",
     "nodemon": "^2.0.19",
     "socket.io": "^4.5.1",
-    "sqlite3": "^5.0.11"
+    "sqlite3": "^5.0.11",
+    "mongoose": "^6.5.2",
+    "dotenv": "^16.0.1"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^7.4.0"
   }
 }

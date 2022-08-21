@@ -1,16 +1,22 @@
-const express = require("express");
-const handlebars = require("express-handlebars");
+import express from "express";
+import handlebars from "express-handlebars";
 
-const classContenedor = require("./contenedores/classContenedor");
-const ClassContenedorDB = require("./contenedores/classContenedorDB");
-const { configMySQL, configSQLite } = require("./options/config");
+import ClassContenedorDB from "./contenedores/classContenedorDB.js";
+import { configMySQL, configSQLite } from "./options/config.js";
+
+import { ProductMocks } from "./mocks/productMocks.js";
+
+import { createRequire } from "module";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
 
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
-const fs = require("fs");
-
-const file1 = new classContenedor("./productos.txt");
 
 const productsApi = new ClassContenedorDB(
   configMySQL.config,
@@ -77,6 +83,16 @@ app.get("/productos", async (req, res) => {
   } else {
     res.render("noProduct");
   }
+});
+
+app.get("/api/productos-test", async (req, res) => {
+  const productMocker = new ProductMocks(5);
+  const arrayProductos = productMocker.createProducts();
+
+  res.render("productList", {
+    productList: arrayProductos,
+    listExists: true,
+  });
 });
 
 const srv = server.listen(PORT, () => {

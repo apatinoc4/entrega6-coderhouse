@@ -1,4 +1,11 @@
-const path = require("path");
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const dbPath = path.resolve(__dirname, "../DB/messages.sqlite");
 
 const configMySQL = {
@@ -26,4 +33,13 @@ const configSQLite = {
   table: "messages",
 };
 
-module.exports = { configMySQL, configSQLite };
+const configMongoDB = {
+  cnxStr: process.env.MONGODB_URL,
+  options: {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+  },
+};
+
+export { configMySQL, configSQLite, configMongoDB };
