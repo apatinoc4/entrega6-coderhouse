@@ -37,7 +37,7 @@ const renderMessages = (data) => {
   let html = data
     .map(function (elem, index) {
       return `<div><strong style="color:blue">${
-        elem.email
+        elem.author.id
       }</strong> <span style="color:brown">[${today.toLocaleString("en-US")}]</span>:
 				${elem.text}</div>`;
     })
@@ -50,7 +50,14 @@ socket.on("messages", function (data) {
 
 function addMessage(e) {
   let mensaje = {
-    email: document.querySelector("#email").value,
+    author: {
+      id: document.querySelector("#email").value,
+      nombre: document.querySelector("#nombre").value,
+      apellido: document.querySelector("#apellido").value,
+      edad: document.querySelector("#edad").value,
+      alias: document.querySelector("#alias").value,
+      avatar: document.querySelector("#avatar").value,
+    },
     text: document.querySelector("#text").value,
   };
   socket.emit("new-message", mensaje);

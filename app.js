@@ -2,6 +2,7 @@ import express from "express";
 import handlebars from "express-handlebars";
 
 import ClassContenedorDB from "./contenedores/classContenedorDB.js";
+import MensajesMongo from "./contenedores/classContenedorMongo.js";
 import { configMySQL, configSQLite } from "./options/config.js";
 
 import { ProductMocks } from "./mocks/productMocks.js";
@@ -22,10 +23,7 @@ const productsApi = new ClassContenedorDB(
   configMySQL.config,
   configMySQL.table
 );
-const messagesApi = new ClassContenedorDB(
-  configSQLite.config,
-  configSQLite.table
-);
+const messagesApi = new MensajesMongo("mensajes");
 
 app.use(express.static("public"));
 
