@@ -33,6 +33,15 @@ const addProduct = (e) => {
   return false;
 };
 
+const renderCompression = (data) => {
+  const compressionTitle = document.querySelector("#compressed-percentage");
+  compressionTitle.innerHTML = `Compresion : ${data}%`;
+};
+
+socket.on("compressed", function (data) {
+  renderCompression(data);
+});
+
 const renderMessages = (data) => {
   let html = data
     .map(function (elem, index) {

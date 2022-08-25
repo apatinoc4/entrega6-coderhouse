@@ -1,9 +1,11 @@
 import express from "express";
 import handlebars from "express-handlebars";
+import { normalize, schema, denormalize } from "normalizr";
+import util from "util";
 
 import ClassContenedorDB from "./contenedores/classContenedorDB.js";
 import MensajesMongo from "./contenedores/classContenedorMongo.js";
-import { configMySQL, configSQLite } from "./options/config.js";
+import { configMySQL } from "./options/config.js";
 
 import { ProductMocks } from "./mocks/productMocks.js";
 
@@ -15,15 +17,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
+function print(objeto) {
+  console.log(util.inspect(objeto, false, 12, true));
+}
+
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
-
 const productsApi = new ClassContenedorDB(
   configMySQL.config,
   configMySQL.table
 );
 const messagesApi = new MensajesMongo("mensajes");
+
+const authorSchema = new schema.Entity("author");
+
+const messageSchema = new schema.Entity(
+  "message",
+  {
+    author: authorSchema,
+  },
+  { idAttribute: () => 123 }
+);
+
+console.log();
 
 app.use(express.static("public"));
 
@@ -47,11 +64,29 @@ io.on("connection", async (socket) => {
   console.log("Se ha conectado un nuevo usuario");
   const messages = await messagesApi.getAll();
 
+  const normalizedMessages = normalize(messages, [messageSchema]);
+
+  const originalLength = JSON.stringify(messages).length;
+  const normalizedLength = JSON.stringify(normalizedMessages).length;
+  const compressedPercentage = (
+    (normalizedLength * 100) /
+    originalLength
+  ).toFixed(2);
+
+  const denormalized = denormalize(
+    normalizedMessages.result,
+    messageSchema,
+    normalizedMessages.entities
+  );
+
+  print(denormalized);
+  socket.emit("compressed", compressedPercentage);
+
   socket.emit("messages", messages);
   socket.on("new-message", async function (data) {
     messages.push(data);
     io.sockets.emit("messages", messages);
-    await messagesApi.save(messages);
+    await messagesApi.save(data);
   });
 
   const productArray = await productsApi.getAll();
