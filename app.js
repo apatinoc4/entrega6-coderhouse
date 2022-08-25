@@ -39,6 +39,7 @@ const messageSchema = new schema.Entity(
 console.log();
 
 app.use(express.static("public"));
+app.use("/css", express.static(__dirname + "/node_modules/bootstrap/dist/css"));
 
 app.engine(
   "hbs",
