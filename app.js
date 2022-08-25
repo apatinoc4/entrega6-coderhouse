@@ -3,9 +3,8 @@ import handlebars from "express-handlebars";
 import { normalize, schema, denormalize } from "normalizr";
 import util from "util";
 
-import ClassContenedorDB from "./contenedores/classContenedorDB.js";
-import MensajesMongo from "./contenedores/classContenedorMongo.js";
-import { configMySQL } from "./options/config.js";
+import MessagesMongo from "./contenedores/messagesMongoDB.js";
+import ProductsMongo from "./contenedores/productsMongoDB.js";
 
 import { ProductMocks } from "./mocks/productMocks.js";
 
@@ -24,11 +23,8 @@ function print(objeto) {
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
-const productsApi = new ClassContenedorDB(
-  configMySQL.config,
-  configMySQL.table
-);
-const messagesApi = new MensajesMongo("mensajes");
+const productsApi = new ProductsMongo("productos");
+const messagesApi = new MessagesMongo("mensajes");
 
 const authorSchema = new schema.Entity("author");
 
@@ -79,7 +75,7 @@ io.on("connection", async (socket) => {
     normalizedMessages.entities
   );
 
-  print(denormalized);
+  // print(denormalized);
   socket.emit("compressed", compressedPercentage);
 
   socket.emit("messages", messages);

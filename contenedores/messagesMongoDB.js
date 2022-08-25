@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { configMongoDB } from "../options/config.js";
 
-export default class MensajesMongo {
+export default class MessagesMongo {
   constructor(nombre) {
     this.nombre = nombre;
     this.mongoose = mongoose
