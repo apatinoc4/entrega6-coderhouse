@@ -2,11 +2,13 @@ import express from "express";
 import handlebars from "express-handlebars";
 import { normalize, schema, denormalize } from "normalizr";
 import util from "util";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 
 import MessagesMongo from "./contenedores/messagesMongoDB.js";
 import ProductsMongo from "./contenedores/productsMongoDB.js";
 
-import { ProductMocks } from "./mocks/productMocks.js";
+import ProductMocks from "./mocks/productMocks.js";
 
 import { createRequire } from "module";
 import path from "path";
@@ -19,6 +21,11 @@ const require = createRequire(import.meta.url);
 function print(objeto) {
   console.log(util.inspect(objeto, false, 12, true));
 }
+
+const advancedOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+};
 
 const app = express();
 const server = require("http").Server(app);
@@ -36,8 +43,20 @@ const messageSchema = new schema.Entity(
   { idAttribute: () => 123 }
 );
 
-console.log();
-
+app.use(
+  session({
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      mongoOptions: advancedOptions,
+    }),
+    secret: "secreto",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 50000,
+    },
+  })
+);
 app.use(express.static("public"));
 app.use("/css", express.static(__dirname + "/node_modules/bootstrap/dist/css"));
 
@@ -99,7 +118,17 @@ io.on("connection", async (socket) => {
 const PORT = 8080;
 
 app.get("/", (req, res) => {
-  res.render("createProduct");
+  const username = req.session.nombre ? req.session.nombre : "";
+  let logged = false;
+
+  if (username) {
+    logged = true;
+  }
+
+  res.render("createProduct", {
+    username,
+    logged,
+  });
 });
 
 app.get("/productos", async (req, res) => {
@@ -122,6 +151,23 @@ app.get("/api/productos-test", async (req, res) => {
   res.render("productList", {
     productList: arrayProductos,
     listExists: true,
+  });
+});
+
+app.post("/login", (req, res) => {
+  const { username } = req.body;
+  req.session.nombre = username;
+
+  res.redirect("/");
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (!err) {
+      res.status(200).send("some text");
+    } else {
+      res.send({ status: "logout err", body: err });
+    }
   });
 });
 

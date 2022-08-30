@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 
-export class ProductMocks {
+export default class ProductMocks {
   constructor(amount) {
     this.amount = amount;
   }

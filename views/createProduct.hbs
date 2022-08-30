@@ -1,4 +1,16 @@
-<nav class="navbar navbar-inverse navbar-fixed-top">Test</nav>
+<div>
+  <h1>Bienvenido {{username}}</h1>
+  {{#if logged}}
+    <button onclick="location.href = '/logout'">Cerrar Sesión</button>
+  {{else}}
+    <h2>Inicia sesión!</h2>
+    <form action="/login" method="POST" id="login-form">
+      Nombre:
+      <input type="text" id="username" name="username" />
+      <button>Inicia Sesión</button>
+    </form>
+  {{/if}}
+</div>
 <h2>Crear Producto</h2>
 <form onsubmit="return addProduct(this)" id="create-product">
   Nombre:
