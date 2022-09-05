@@ -34,11 +34,17 @@ const productsApi = new ProductsMongo("productos");
 const messagesApi = new MessagesMongo("mensajes");
 
 const authorSchema = new schema.Entity("author");
+const textSchema = new schema.Entity("text");
 
-const messageSchema = new schema.Entity(
+const messageSchema = new schema.Entity("message", {
+  author: authorSchema,
+  text: textSchema,
+});
+
+const chatSchema = new schema.Entity(
   "message",
   {
-    author: authorSchema,
+    messages: [messageSchema],
   },
   { idAttribute: () => 123 }
 );
@@ -80,22 +86,21 @@ io.on("connection", async (socket) => {
   console.log("Se ha conectado un nuevo usuario");
   const messages = await messagesApi.getAll();
 
-  const normalizedMessages = normalize(messages, [messageSchema]);
+  const normalizedMessages = normalize(messages, chatSchema);
 
   const originalLength = JSON.stringify(messages).length;
   const normalizedLength = JSON.stringify(normalizedMessages).length;
   const compressedPercentage = (
-    (normalizedLength * 100) /
-    originalLength
+    (originalLength * 100) /
+    normalizedLength
   ).toFixed(2);
 
-  const denormalized = denormalize(
+  const denormalizedMessages = denormalize(
     normalizedMessages.result,
-    messageSchema,
+    chatSchema,
     normalizedMessages.entities
   );
 
-  // print(denormalized);
   socket.emit("compressed", compressedPercentage);
 
   socket.emit("messages", messages);
@@ -162,12 +167,13 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
+  const username = req.session.nombre;
+
   req.session.destroy((err) => {
-    if (!err) {
-      res.status(200).send("some text");
-    } else {
-      res.send({ status: "logout err", body: err });
-    }
+    res.render("logoutMessage", {
+      layout: "logoutMessageLayout.hbs",
+      username,
+    });
   });
 });
 
@@ -176,4 +182,5 @@ const srv = server.listen(PORT, () => {
     `Servidor Http con Websockets escuchando en el puerto ${srv.address().port}`
   );
 });
+
 srv.on("error", (error) => console.log(`Error en servidor ${error}`));
