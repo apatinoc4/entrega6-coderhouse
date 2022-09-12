@@ -5,8 +5,13 @@ import util from "util";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 
+import bcrypt from "bcrypt";
+
+import passport from "passport";
+
 import MessagesMongo from "./contenedores/messagesMongoDB.js";
 import ProductsMongo from "./contenedores/productsMongoDB.js";
+import UsersMongo from "./contenedores/usersMongoDB.js";
 
 import ProductMocks from "./mocks/productMocks.js";
 
@@ -22,6 +27,9 @@ function print(objeto) {
   console.log(util.inspect(objeto, false, 12, true));
 }
 
+const LocalStrategy = require("passport-local").Strategy;
+const { hashSync, compareSync } = bcrypt;
+
 const advancedOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -30,8 +38,10 @@ const advancedOptions = {
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
+
 const productsApi = new ProductsMongo("productos");
 const messagesApi = new MessagesMongo("mensajes");
+const usersApi = new UsersMongo("usuarios");
 
 const authorSchema = new schema.Entity("author");
 const textSchema = new schema.Entity("text");
@@ -49,6 +59,59 @@ const chatSchema = new schema.Entity(
   { idAttribute: () => 123 }
 );
 
+//
+
+const validatePassword = (user, password) => {
+  return compareSync(password, user.password);
+};
+
+passport.use(
+  "login",
+  new LocalStrategy(async (req, username, password) => {
+    const user = await usersApi.getOne(username);
+
+    if (!user) {
+      return done(null, false);
+    }
+
+    if (!validatePassword(user, password)) {
+      console.log("Invalid Password");
+      return done(null, false);
+    }
+    return done(null, user);
+  })
+);
+
+passport.use(
+  "register",
+  new LocalStrategy(async (username, password, done) => {
+    const usuario = await usersApi.getOne(username);
+
+    if (usuario) {
+      return done("already registered");
+    }
+
+    const hashedPassword = hashSync(password, 10);
+
+    const user = {
+      username: username,
+      password: hashedPassword,
+    };
+
+    await usersApi.save(user);
+
+    passport.serializeUser(function (user, done) {
+      done(null, user);
+    });
+
+    passport.deserializeUser(function (user, done) {
+      done(null, user);
+    });
+  })
+);
+
+//
+
 app.use(
   session({
     store: MongoStore.create({
@@ -63,6 +126,10 @@ app.use(
     },
   })
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(express.static("public"));
 app.use("/css", express.static(__dirname + "/node_modules/bootstrap/dist/css"));
 
@@ -84,10 +151,9 @@ app.use(express.urlencoded({ extended: true }));
 
 io.on("connection", async (socket) => {
   console.log("Se ha conectado un nuevo usuario");
+
   const messages = await messagesApi.getAll();
-
   const normalizedMessages = normalize(messages, chatSchema);
-
   const originalLength = JSON.stringify(messages).length;
   const normalizedLength = JSON.stringify(normalizedMessages).length;
   const compressedPercentage = (
@@ -159,12 +225,46 @@ app.get("/api/productos-test", async (req, res) => {
   });
 });
 
-app.post("/login", (req, res) => {
-  const { username } = req.body;
-  req.session.nombre = username;
+// REGISTER
 
-  res.redirect("/");
+app.get("/register", async (req, res) => {
+  res.render("register");
 });
+
+app.post(
+  "/register",
+  passport.authenticate("register", { failureRedirect: "/failregister" }),
+  (req, res) => {
+    res.redirect("/");
+  }
+);
+
+//LOGIN
+
+app.get("/login", async (req, res) => {
+  res.render("login");
+});
+
+app.post("/login", (req, res) => {
+  if (req.isAuthenticated()) {
+    const { username } = req.body;
+    console.log(req.body, "HELLOOOO");
+
+    req.session.nombre = username;
+    res.redirect("/");
+  } else {
+    res.render("login");
+  }
+});
+
+// app.post("/login", (req, res) => {
+//   const { username } = req.body;
+//   req.session.nombre = username;
+
+//   res.redirect("/");
+// });
+
+// LOGOUT
 
 app.get("/logout", (req, res) => {
   const username = req.session.nombre;
